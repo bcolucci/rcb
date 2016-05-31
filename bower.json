@@ -1,0 +1,14 @@
+{
+  "name": "rcb",
+  "private": true,
+  "ignore": [
+    "**/.*",
+    "node_modules",
+    "bower_components"
+  ],
+  "dependencies": {
+    "socket.io-client": "^1.4.6",
+    "bacon": "^0.7.84",
+    "jquery": "^2.2.4"
+  }
+}

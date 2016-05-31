@@ -1,0 +1,33 @@
+{
+  "name": "rcb",
+  "version": "0.0.1",
+  "description": "Robot Circle Battle",
+  "main": "rcb.js",
+  "keywords": [
+    "robot",
+    "cricle",
+    "battle"
+  ],
+  "author": "Brice Colucci <brice.colucci@gmail.com>",
+  "homepage": "https://github.com/bcolucci/rcb",
+  "license": "MIT",
+  "private": true,
+  "scripts": {
+    "start": "node server.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/bcolucci/rcb.git"
+  },
+  "bugs": {
+    "url": "https://github.com/bcolucci/rcb/issues"
+  },
+  "dependencies": {
+    "bunyan": "^1.8.1",
+    "config": "^1.20.4",
+    "express": "^4.13.4",
+    "random-string": "^0.1.2",
+    "socket.io": "^1.4.6",
+    "sprintf": "^0.1.5"
+  }
+}
