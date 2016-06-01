@@ -13,7 +13,8 @@
   "license": "MIT",
   "private": true,
   "scripts": {
-    "start": "node server.js"
+    "start": "node server.js",
+    "start-dev": "nodemon server.js"
   },
   "repository": {
     "type": "git",
@@ -23,9 +24,10 @@
     "url": "https://github.com/bcolucci/rcb/issues"
   },
   "dependencies": {
-    "bunyan": "^1.8.1",
     "config": "^1.20.4",
     "express": "^4.13.4",
+    "immutable": "^3.8.1",
+    "ramda": "^0.21.0",
     "random-string": "^0.1.2",
     "socket.io": "^1.4.6",
     "sprintf": "^0.1.5"

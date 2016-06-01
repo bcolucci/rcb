@@ -1,0 +1,12 @@
+html, body {
+  margin: 0;
+  padding: 0;
+  background-image: url('/public/images/bg.png');
+  overflow: hidden;
+}
+
+canvas {
+  background-color: rgba(250, 250, 250, 0.1);
+  display: block;
+  margin: auto;
+}

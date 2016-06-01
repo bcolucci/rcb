@@ -1,14 +1,11 @@
 
 # Robot Circle Battle
 
-Build the image:
+    # install
+    npm i && bower i
 
-    docker build -t rcb .
+    # run
+    node server.js
 
-Run the server:
-
-    docker run -it --rm -p 3000:3000 rcb
-
-Open the client:
-
+    # play
     google-chrome http://localhost:3000/
