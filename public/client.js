@@ -12,6 +12,20 @@ const RCB = (() => {
 
   const Config = function (args) {
 
+    this.update = _args => {
+      if (!_args) return new Config;
+      for (let i in _args) args[i] = _args[i];
+      return new Config(args);
+    };
+
+    this.defaultAnchor = () => document.body;
+    this.defaultCanvasSize = () => window.innerHeight;
+    this.defaultRobotSrc = () => 'public/images/robot.png';
+    this.defaultBossSrc = () => 'public/images/boss.png';
+
+    this.escapeKeyCode = 27;
+    this.spaceKeyCode = 32;
+
     this.leftKeyCode = 37;
     this.rightKeyCode = 39;
     this.movingKeyCodes = [
@@ -19,19 +33,26 @@ const RCB = (() => {
       this.rightKeyCode
     ];
 
+    this.definedKeyCodes = [
+      this.escapeKeyCode,
+      this.spaceKeyCode
+    ].concat(this.movingKeyCodes);
+
     args = args || {};
 
-    this.anchor = args.anchor || document.body;
-    this.canvasSize = args.canvasSize || window.innerHeight;
+    this.anchor = args.anchor || this.defaultAnchor();
+    this.canvasSize = args.canvasSize || this.defaultCanvasSize();
 
-    this.robotImage = createImage(args.robotSrc || 'public/images/robot.png');
-    this.bossImage = createImage(args.bossSrc || 'public/images/boss.png');
+    this.robotImage = createImage(args.robotSrc || this.defaultRobotSrc());
+    this.bossImage = createImage(args.bossSrc || this.defaultBossSrc());
 
     this.movingCircleRadius = this.canvasSize/2 - this.robotImage.width;
 
     this.textMargin = args.textMargin || 20;
 
     this.server = {
+      KEY_CODE_ESCAPE: this.escapeKeyCode,
+      KEY_CODE_SPACE: this.spaceKeyCode,
       KEY_CODE_LEFT: this.leftKeyCode,
       KEY_CODE_RIGHT: this.rightKeyCode,
       MOVING_KEY_CODES: this.movingKeyCodes,
@@ -41,56 +62,51 @@ const RCB = (() => {
     };
   };
 
-  const Client = function (config) {
+  const Client = function (config, socket, eventSource) {
 
-    const getCanvas = anchor => {
+    const getContext = anchor => {
       const anchorNode = typeof(anchor) === 'string' ? document.querySelector(anchor) : anchor;
       const existing = anchorNode.querySelector('canvas');
       if (existing)
-        return canvasContext(existing);
+        return canvasCtx(existing);
       const canvas = document.createElement('canvas');
       canvas.width = canvas.height = config.canvasSize;
+      canvas.center = canvas.width/2;
       anchorNode.appendChild(canvas);
-      return getCanvas(anchor);
+      return getContext(anchor);
     };
 
-    const canvasContext = canvas => {
-      const ctx = canvas.getContext('2d');
-      ctx.width = ctx.height = canvas.width;
-      ctx.center = ctx.width/2;
-      return ctx;
-    };
+    const canvasCtx = canvas => canvas.getContext('2d');
 
-    const clearCanvas = canvas => canvas.clearRect(0, 0, canvas.width, canvas.width);
+    const clearCtx = ctx => ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.width);
 
-    const writeDebugInformations = (canvas, infos) => {
+    const writeDebugInformations = (ctx, infos) => {
       let textIndex = 0;
-      const write = str => canvas.fillText(str, 10, ++textIndex * config.textMargin);
-      canvas.fillStyle = '#FFF';
+      const write = str => ctx.fillText(str, 10, ++textIndex * config.textMargin);
+      ctx.fillStyle = '#FFF';
       infos.forEach(write);
     };
 
-    const drawDebugVector = (canvas, fromx, fromy, tox, toy, color) => {
+    const drawDebugVector = (ctx, fromx, fromy, tox, toy) => {
       const headLength = 20;
       const angle = Math.atan2(toy - fromy, tox - fromx);
       const cosHead = sign => Math.cos(angle - Math.PI * sign/6);
       const sinHead = sign => Math.sin(angle - Math.PI * sign/6);
-      canvas.beginPath();
-      canvas.moveTo(fromx, fromy);
-      canvas.lineTo(tox, toy);
-      canvas.moveTo(tox, toy);
-      canvas.lineTo(tox - headLength * cosHead(-1), toy - headLength * sinHead(-1));
-      canvas.moveTo(tox, toy);
-      canvas.lineTo(tox - headLength * cosHead(+1), toy - headLength * sinHead(+1));
-      if (color) canvas.strokeStyle = color;
-      canvas.stroke();
+      ctx.beginPath();
+      ctx.moveTo(fromx, fromy);
+      ctx.lineTo(tox, toy);
+      ctx.moveTo(tox, toy);
+      ctx.lineTo(tox - headLength * cosHead(-1), toy - headLength * sinHead(-1));
+      ctx.moveTo(tox, toy);
+      ctx.lineTo(tox - headLength * cosHead(+1), toy - headLength * sinHead(+1));
+      ctx.stroke();
     };
 
-    const drawMovingCircle = canvas => {
-      canvas.beginPath();
-      canvas.arc(canvas.center, canvas.center, config.movingCircleRadius, 0, 2 * Math.PI, 0);
-      canvas.fillStyle = 'rgba(250, 250, 250, 0.1)';
-      canvas.fill();
+    const drawMovingCircle = ctx => {
+      ctx.beginPath();
+      ctx.arc(ctx.canvas.center, ctx.canvas.center, config.movingCircleRadius, 0, 2 * Math.PI, 0);
+      ctx.fillStyle = 'rgba(250, 250, 250, 0.1)';
+      ctx.fill();
     };
 
     const setPlayerAbsolutePosition = player => {
@@ -98,68 +114,90 @@ const RCB = (() => {
       player.y = config.movingCircleRadius * (player.y + 1) + config.robotImage.width;
     };
 
-    const relRotation = (canvas, image, rad, refX, refY) => {
+    const relRotation = (ctx, image, rad, refX, refY) => {
       const relX = x => (x || 0) - image.width/2;
       const relY = y => (y || 0) - image.height/2;
-      canvas.save();
-      canvas.translate(refX, refY);
-      canvas.rotate(rad);
-      canvas.drawImage(config.robotImage, relX(), relY());
-      canvas.rotate(-rad);
-      canvas.translate(relX(refX), relY(refY));
-      canvas.restore();
+      ctx.save();
+      ctx.translate(refX, refY);
+      ctx.rotate(rad);
+      ctx.drawImage(image, relX(), relY());
+      ctx.rotate(-rad);
+      ctx.translate(relX(refX), relY(refY));
+      ctx.restore();
     };
 
-    const drawPlayer = (canvas, player) => {
+    const drawPlayer = (ctx, player) => {
       const imageX = x => (x || 0) - config.robotImage.width/2;
       const imageY = y => (y || 0) - config.robotImage.height/2;
-      relRotation(canvas, config.robotImage, player.angleRd, player.x, player.y);
+      relRotation(ctx, config.robotImage, player.angleRd, player.x, player.y);
     };
 
-    const drawBoss = (canvas, boss) => {
+    const drawBoss = (ctx, boss) => {
       const x = config.bossImage.width * (boss.x + 1) + config.bossImage.width;
       const y = config.bossImage.width * (boss.y + 1) + config.bossImage.width;
-      canvas.beginPath();
-      canvas.arc(x, y, 15, 0, 2 * Math.PI, 0);
-      canvas.fillStyle = 'rgba(255, 0, 0, 0.7)';
-      canvas.fill();
+      ctx.beginPath();
+      ctx.arc(ctx.canvas.center, ctx.canvas.center, 30, 0, 2 * Math.PI, 0);
+      ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
+      ctx.fill();
+      ctx.beginPath();
+      ctx.arc(x, y, 15, 0, 2 * Math.PI, 0);
+      ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
+      ctx.fill();
+      relRotation(ctx, config.bossImage, boss.angleRd, ctx.canvas.center, ctx.canvas.center);
     };
 
-    const emitKeyPress = (socket, source, eventName) => source.asEventStream(eventName)
+    const isDefinedKeyCode = keyCode => config.definedKeyCodes.indexOf(keyCode) > -1;
+
+    const emitKeyPress = (socket, source, eventName) => source
+      .asEventStream(eventName)
       .map(event => event.keyCode)
-      .filter(keyCode => config.movingKeyCodes.indexOf(keyCode) > -1)
+      .filter(isDefinedKeyCode)
       .onValue(keyCode => socket.emit(eventName, keyCode));
 
     const drawState = (socketId, state) => {
+
       const startedAt = performance.now();
-      const canvas = getCanvas(config.anchor);
+
+      const ctx = getContext(config.anchor);
+      clearCtx(ctx);
+
       const player = state.player;
       const boss = state.boss;
       setPlayerAbsolutePosition(player);
-      clearCanvas(canvas);
-      drawMovingCircle(canvas);
-      drawPlayer(canvas, player);
-      drawBoss(canvas, boss);
-      drawDebugVector(canvas, player.x, player.y, canvas.center, canvas.center, 'yellow');
-      writeDebugInformations(canvas, [
+
+      drawMovingCircle(ctx);
+
+      drawPlayer(ctx, player);
+      drawBoss(ctx, boss);
+
+      drawDebugVector(ctx, player.x, player.y, ctx.canvas.center, ctx.canvas.center);
+
+      writeDebugInformations(ctx, [
         `SKID ${socketId}`,
         `Frame ${state.frame}`,
         `Player ${player.angleDg}° (${player.x}, ${player.y}) --> ${player.moves.join(',')}`,
         `Boss ${boss.angleDg}° (${boss.x}, ${boss.y}) --> ${boss.moves.join(',')}`,
-        `CFR ${Math.floor((performance.now() - startedAt) * 1000)}μs`
+        `Level ${boss.level}`,
+        `Server FR ${state.ctime}μs`,
+        `Client FR ${performance.now() - startedAt}μs`
       ]);
     };
 
+    //const updateConfig = config => socket.emit('updateConfig', config.server);
+
+    const start = () => {
+      socket.emit('init', config.server);
+      socket.on('initialized', socketId => {
+        socket.id = socketId;
+        emitKeyPress(socket, eventSource, 'keydown');
+        emitKeyPress(socket, eventSource, 'keyup');
+        socket.on('compute', state => drawState(socketId, state));
+      });
+    };
+
     return {
-      start: (eventSource, socket) => {
-        socket.emit('init', config.server);
-        socket.on('initialized', id => {
-          socket.id = id;
-          emitKeyPress(socket, eventSource, 'keydown');
-          emitKeyPress(socket, eventSource, 'keyup');
-          socket.on('compute', state => drawState(socket.id, state));
-        });
-      }
+      //updateConfig: updateConfig,
+      start: start
     };
 
   };

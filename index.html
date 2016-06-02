@@ -14,8 +14,11 @@
       const eventSource = $(document);
       const socket = io();
       const config = new RCB.Config;
-      const client = new RCB.Client(config, io());
-      client.start(eventSource, socket);
+      const client = new RCB.Client(config, io(), eventSource);
+      client.start();
+      /*window.addEventListener('resize', () => {
+        client.updateConfig(config.update({ canvasSize: config.defaultCanvasSize() }));
+      });*/
     });
   </script>
 </body>
