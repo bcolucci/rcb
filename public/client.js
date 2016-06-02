@@ -119,8 +119,8 @@ const RCBClient = (socket, anchor) => {
     writeDebugInformations(canvas, [
       `SKID ${socket.id}`,
       `Frame ${state.frame}`,
-      `Player ${player.angle}° (${player.x}, ${player.y})`,
-      `Boss ${boss.angle}° (${boss.x}, ${boss.y})`,
+      `Player ${player.angleDg}° (${player.x}, ${player.y}) --> ${player.moves.join(',')}`,
+      `Boss ${boss.angleDg}° (${boss.x}, ${boss.y}) --> ${boss.moves.join(',')}`,
       `CFR ${Math.floor((performance.now() - startedAt) * 1000)}μs`
     ]);
   };

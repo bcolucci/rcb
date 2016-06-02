@@ -32,35 +32,38 @@ const moveEventsFilter = R.filter(isMoveEvent);
 const moveStepDirectionSign = R.ifElse(isLeftKeyCode, plusOne, minusOne);
 
 const Boss = I.Record({
-  angle: 0,
+  angleDg: 0,
+  angleRd: 0,
   x: 1,
-  y: 0
+  y: 0,
+  moves: null
 });
 
 const Player = I.Record({
-  angle: 0,
+  angleDg: 0,
+  angleRd: 0,
   x: 1,
-  y: 0
+  y: 0,
+  moves: null
 });
 
 const State = I.Record({
   frame: 1,
   player: new Player,
-  boss: new Boss,
-  playerActions: new I.Set,
-  bossActions: new I.Set
+  boss: new Boss
 });
 
-const nextAngle = (angle, move, moveStep) => {
-  const nextAngle = angle + moveStep * moveStepDirectionSign(move);
+const nextAngle = (angleDg, move, moveStep) => {
+  const nextAngle = angleDg + moveStep * moveStepDirectionSign(move);
   return nextAngle < 0 ? nextAngle + 360 : (nextAngle > 359 ? nextAngle - 360 : nextAngle);
 };
 
 const updateXY = movable => {
-  const rad = degToRad(movable.angle);
+  const rd = degToRad(movable.angleDg);
   return movable
-    .set('x', Math.cos(rad))
-    .set('y', Math.sin(rad));
+    .set('angleRd', rd)
+    .set('x', Math.cos(rd))
+    .set('y', Math.sin(rd));
 };
 
 const compactMoves = moves => {
@@ -77,7 +80,7 @@ const compactMoves = moves => {
 };
 
 const moveEntity = entity => moveStep => moves => {
-  const recurse = () => moveEntity(entity.set('angle', nextAngle(entity.angle, R.head(moves), moveStep)))(moveStep)(R.tail(moves));
+  const recurse = () => moveEntity(entity.set('angleDg', nextAngle(entity.angleDg, R.head(moves), moveStep)))(moveStep)(R.tail(moves));
   return R.ifElse(R.isEmpty, R.always(updateXY(entity)), recurse)(moves);
 };
 
@@ -98,8 +101,10 @@ const RCB = function() {
   const compute = (events, state) => {
     const playerMoves = compactMoves(moveEventsFilter(events).map(keyCodeProperty));
     const bossMoves = compactMoves(randomBossMoves());
-    const player = playerMoves.length ? moveEntity(state.player)(PLAYER_MOVE_STEP)(playerMoves) : state.player;
-    const boss = bossMoves.length ? moveEntity(state.boss)(BOSS_MOVE_STEP)(bossMoves) : state.boss;
+    const player = (playerMoves.length ? moveEntity(state.player)(PLAYER_MOVE_STEP)(playerMoves) : state.player)
+      .set('moves', playerMoves);
+    const boss = (bossMoves.length ? moveEntity(state.boss)(BOSS_MOVE_STEP)(bossMoves) : state.boss)
+      .set('moves', bossMoves);
     return state
       .set('frame', state.frame + 1)
       .set('player', player)
