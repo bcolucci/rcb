@@ -16,6 +16,14 @@ const RCBClient = (socket, anchor) => {
 
   const KEY_CODES = [ 37/*left*/, 39/*right*/ ];
 
+  const createImage = src => {
+    var img = new Image();
+    img.src = 'public/images/' + src;
+    return img;
+  };
+
+  const robotImage = createImage('robot.png');
+
   const getCanvas = anchor => {
     const anchorNode = document.querySelector(anchor);
     const existing = anchorNode.querySelector('canvas');
@@ -66,19 +74,22 @@ const RCBClient = (socket, anchor) => {
     player.y = MOVING_CIRCLE_RADIUS * player.y + MOVING_CIRCLE_RADIUS + PLAYER_CIRCLE_RADIUS / 2 - PLAYER_CIRCLE_BORDER_SIZE / 2;
     canvas.beginPath();
     canvas.arc(player.x, player.y, PLAYER_CIRCLE_RADIUS, 0, 2 * Math.PI, 0);
+    canvas.drawImage(robotImage, player.x - PLAYER_CIRCLE_RADIUS, player.y - PLAYER_CIRCLE_RADIUS, PLAYER_CIRCLE_RADIUS*2, PLAYER_CIRCLE_RADIUS*2);
     canvas.lineWidth = PLAYER_CIRCLE_BORDER_SIZE;
     canvas.strokeStyle = PLAYER_CIRCLE_BORDER_COLOR;
     canvas.stroke();
   };
 
   const keyDownStream = $(window).asEventStream('keydown');
-  //const keyUpStream = $(window).asEventStream('keyup');
+  const keyUpStream = $(window).asEventStream('keyup');
 
-  keyDownStream
-    //.merge(keyUpStream)
-    .map(event => event.keyCode)
+  const emitKeyPress = (type, stream) => stream.map(event => event.keyCode)
     .filter(keyCode => KEY_CODES.indexOf(keyCode) > -1)
-    .onValue(keyCode => socket.emit('keyPress', keyCode));
+    .onValue(keyCode => socket.emit(type, keyCode));
+
+  emitKeyPress('keyDownPress', keyDownStream);
+  emitKeyPress('keyUpPress', keyUpStream);
+
 
   const playerVectorOpts = {
     lineWidth: 2,
