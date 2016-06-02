@@ -69,12 +69,23 @@ const RCBClient = (socket, anchor) => {
     canvas.stroke();
   };
 
+  const degreesToRadians = function(degrees) {
+    return degrees * Math.PI / 180;
+  };
+
   const drawPlayer = (canvas, player) => {
     player.x = MOVING_CIRCLE_RADIUS * player.x + MOVING_CIRCLE_RADIUS + PLAYER_CIRCLE_RADIUS / 2 - PLAYER_CIRCLE_BORDER_SIZE / 2;
     player.y = MOVING_CIRCLE_RADIUS * player.y + MOVING_CIRCLE_RADIUS + PLAYER_CIRCLE_RADIUS / 2 - PLAYER_CIRCLE_BORDER_SIZE / 2;
     canvas.beginPath();
     canvas.arc(player.x, player.y, PLAYER_CIRCLE_RADIUS, 0, 2 * Math.PI, 0);
+
+    canvas.save();
+    console.log(degreesToRadians(player.angle), player.angle);
+    canvas.translate(0, 0);
+    canvas.rotate(-1*degreesToRadians(player.angle));
     canvas.drawImage(robotImage, player.x - PLAYER_CIRCLE_RADIUS, player.y - PLAYER_CIRCLE_RADIUS, PLAYER_CIRCLE_RADIUS*2, PLAYER_CIRCLE_RADIUS*2);
+    canvas.restore();
+
     canvas.lineWidth = PLAYER_CIRCLE_BORDER_SIZE;
     canvas.strokeStyle = PLAYER_CIRCLE_BORDER_COLOR;
     canvas.stroke();
