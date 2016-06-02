@@ -5,14 +5,18 @@
   <link rel="stylesheet" href="/public/style.css">
 </head>
 <body>
-  <div id="game-container"></div>
   <script src="/components/jquery/dist/jquery.min.js"></script>
   <script src="/components/bacon/dist/Bacon.min.js"></script>
   <script src="/components/socket.io-client/socket.io.js"></script>
   <script src="/public/client.js"></script>
   <script>
-    const socket = io();
-    window.addEventListener('load', () => RCBClient(socket, '#game-container'));
+    window.addEventListener('load', () => {
+      const eventSource = $(document);
+      const socket = io();
+      const config = new RCB.Config;
+      const client = new RCB.Client(config, io());
+      client.start(eventSource, socket);
+    });
   </script>
 </body>
 </html>
