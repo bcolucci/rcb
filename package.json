@@ -9,6 +9,12 @@
     "battle"
   ],
   "author": "Brice Colucci <brice.colucci@gmail.com>",
+  "contributors": [
+    {
+      "name": "Arnaud Laval",
+      "email": "alaval@wuha.io"
+    }
+  ],
   "homepage": "https://github.com/bcolucci/rcb",
   "license": "MIT",
   "private": true,
