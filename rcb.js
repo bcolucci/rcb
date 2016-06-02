@@ -8,9 +8,12 @@ const KEY_PRESS_EVENT = 'keyPress';
 const KEY_CODE_LEFT = 37;
 const KEY_CODE_RIGHT = 39;
 const MOVING_KEY_CODES = [ KEY_CODE_LEFT, KEY_CODE_RIGHT ];
+
 const PLAYER_MOVE_STEP = 2;
+const BOSS_MOVE_STEP = 5;
 
 const degToRad = deg => deg * 2 * Math.PI / 360;
+const randomNumber = max => Math.floor(Math.random() * (max || 1));
 
 const nameProperty = R.prop('name');
 const keyCodeProperty = R.prop('keyCode');
@@ -28,7 +31,11 @@ const isMoveEvent = R.and(isKeyPressEvent, R.compose(isMoveKey, keyCodeProperty)
 const moveEventsFilter = R.filter(isMoveEvent);
 const moveStepDirectionSign = R.ifElse(isLeftKeyCode, plusOne, minusOne);
 
-const Boss = I.Record({ angle: 0 });
+const Boss = I.Record({
+  angle: 0,
+  x: 1,
+  y: 0
+});
 
 const Player = I.Record({
   angle: 0,
@@ -44,14 +51,16 @@ const State = I.Record({
   bossActions: new I.Set
 });
 
-const nextAngle = (angle, move) => {
-  const nextAngle = angle + PLAYER_MOVE_STEP * moveStepDirectionSign(move);
+const nextAngle = (angle, move, moveStep) => {
+  const nextAngle = angle + moveStep * moveStepDirectionSign(move);
   return nextAngle < 0 ? nextAngle + 360 : (nextAngle > 359 ? nextAngle - 360 : nextAngle);
 };
 
-const updatePlayerXY = player => {
-  const rad = degToRad(player.angle);
-  return player.set('x', Math.cos(rad)).set('y', Math.sin(rad));
+const updateXY = movable => {
+  const rad = degToRad(movable.angle);
+  return movable
+    .set('x', Math.cos(rad))
+    .set('y', Math.sin(rad));
 };
 
 const compactMoves = moves => {
@@ -67,9 +76,19 @@ const compactMoves = moves => {
   return groups[0].concat(groups[1]);
 };
 
-const movePlayer = player => moves => {
-  const recurse = () => movePlayer(player.set('angle', nextAngle(player.angle, R.head(moves))))(R.tail(moves));
-  return R.ifElse(R.isEmpty, R.always(updatePlayerXY(player)), recurse)(moves);
+const moveEntity = entity => moveStep => moves => {
+  const recurse = () => moveEntity(entity.set('angle', nextAngle(entity.angle, R.head(moves), moveStep)))(moveStep)(R.tail(moves));
+  return R.ifElse(R.isEmpty, R.always(updateXY(entity)), recurse)(moves);
+};
+
+const randomBossMoves = () => {
+  const moves = [];
+  const nbMoves = randomNumber(3);
+  const acc = (moves, i) => {
+    if (!i) return moves;
+    return acc(moves.concat(MOVING_KEY_CODES[randomNumber(MOVING_KEY_CODES.length)]), i - 1);
+  };
+  return acc([], nbMoves);
 };
 
 const RCB = function() {
@@ -78,8 +97,13 @@ const RCB = function() {
 
   const compute = (events, state) => {
     const playerMoves = compactMoves(moveEventsFilter(events).map(keyCodeProperty));
-    const player = playerMoves.length ? movePlayer(state.player)(playerMoves) : state.player;
-    return state.set('player', player);
+    const bossMoves = compactMoves(randomBossMoves());
+    const player = playerMoves.length ? moveEntity(state.player)(PLAYER_MOVE_STEP)(playerMoves) : state.player;
+    const boss = bossMoves.length ? moveEntity(state.boss)(BOSS_MOVE_STEP)(bossMoves) : state.boss;
+    return state
+      .set('frame', state.frame + 1)
+      .set('player', player)
+      .set('boss', boss);
   };
 
   return {

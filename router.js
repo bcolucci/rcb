@@ -25,41 +25,34 @@ const newGame = socket => {
 };
 
 const compute = socket => {
-  if (!game || !socket)
-    return;
+  if (!game || !socket) return;
   state = game.compute(events, state);
   socket.broadcast.emit('compute', state);
 };
 
 const pushEvent = (name, keyCode) => {
-  events = events.filter(val => {
-    return val.name !== name || val.keyCode !== keyCode;
-  });
-  events.push({ name: name, keyCode: keyCode, ts: new Date().getTime() });
-  console.log(events);
-  return;
+  events = events.filter(val => val.name !== name || val.keyCode !== keyCode)
+    .concat({ name: name, keyCode: keyCode, ts: new Date().getTime() });
 };
 
 const delEvent = (name, keyCode) => {
-  events = events.filter(val => {
-    return val.name !== name && val.keyCode !== keyCode;
-  });
-  return;
+  events = events.filter(val => val.name !== name && val.keyCode !== keyCode);
 };
 
 const connectionHandler = socket => {
   newGame(socket);
   socket.id = randomString() + '-' + sprintf('%04d', Math.floor(Math.random() * 1000));
+  socket.emit('id', socket.id);
   socket.on('disconnect', disconnectHandler(socket));
   socket.on('keyDownPress', keyDownPressHandler(socket));
   socket.on('keyUpPress', keyUpPressHandler(socket));
 };
 
-const disconnectHandler = socket => () => stopComputing();
+const disconnectHandler = socket => stopComputing;
 
-const keyDownPressHandler = socket => keyCode => pushEvent('keyPress',keyCode );
+const keyDownPressHandler = socket => keyCode => pushEvent('keyPress', keyCode);
 
-const keyUpPressHandler = socket => keyCode => delEvent('keyPress',keyCode );
+const keyUpPressHandler = socket => keyCode => delEvent('keyPress', keyCode);
 
 module.exports = http => {
   const io = require('socket.io')(http);
