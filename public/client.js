@@ -76,18 +76,31 @@ const RCBClient = (socket, anchor) => {
     player.y = MOVING_CIRCLE_RADIUS * (player.y + 1) + PLAYER_CIRCLE_RADIUS;
   };
 
+  const relRotation = (canvas, image, rad, refX, refY) => {
+    const relX = x => (x || 0) - image.width/2;
+    const relY = y => (y || 0) - image.height/2;
+    canvas.save();
+    canvas.translate(refX, refY);
+    canvas.rotate(rad);
+    canvas.drawImage(robotImage, relX(), relY());
+    canvas.rotate(-rad);
+    canvas.translate(relX(refX), relY(refY));
+    canvas.restore();
+  };
+
   const drawPlayer = (canvas, player) => {
+    const imageX = x => (x || 0) - robotImage.width/2;
+    const imageY = y => (y || 0) - robotImage.height/2;
     canvas.beginPath();
     canvas.arc(player.x, player.y, PLAYER_CIRCLE_RADIUS, 0, 2 * Math.PI, 0);
     canvas.fillStyle = 'rgba(250, 250, 250, 0.6)';
     canvas.fill();
-    canvas.drawImage(robotImage, player.x - PLAYER_CIRCLE_RADIUS, player.y - PLAYER_CIRCLE_RADIUS, PLAYER_CIRCLE_RADIUS*2, PLAYER_CIRCLE_RADIUS*2);
+    relRotation(canvas, robotImage, player.angleRd, player.x, player.y);
   };
 
   const drawBoss = (canvas, boss) => {
     const x = BOSS_CIRCLE_RADIUS * (boss.x + 1) + BOSS_CIRCLE_RADIUS;
     const y = BOSS_CIRCLE_RADIUS * (boss.y + 1) + BOSS_CIRCLE_RADIUS;
-    console.log()
     canvas.beginPath();
     canvas.arc(canvas.center, canvas.center, BOSS_CIRCLE_RADIUS, 0, 2 * Math.PI, 0);
     canvas.fillStyle = 'rgba(0, 0, 0, 0.8)';
