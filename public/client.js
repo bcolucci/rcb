@@ -43,7 +43,7 @@ const RCBClient = (socket, anchor) => {
 
   const writeDebugInformations = (canvas, infos) => {
     let textIndex = 0;
-    const write = str => canvas.fillText(str, 10, textIndex++ * TEXT_MARGIN);
+    const write = str => canvas.fillText(str, 10, ++textIndex * TEXT_MARGIN);
     canvas.fillStyle = '#FFF';
     infos.forEach(write);
   };
@@ -117,6 +117,7 @@ const RCBClient = (socket, anchor) => {
     drawBoss(canvas, boss);
     drawDebugVector(canvas, player.x, player.y, canvas.center, canvas.center, 'yellow');
     writeDebugInformations(canvas, [
+      `SKID ${socket.id}`,
       `Frame ${state.frame}`,
       `Player ${player.angle}° (${player.x}, ${player.y})`,
       `Boss ${boss.angle}° (${boss.x}, ${boss.y})`,
@@ -124,5 +125,6 @@ const RCBClient = (socket, anchor) => {
     ]);
   };
 
+  socket.on('id', id => socket.id = id);
   socket.on('compute', drawState);
 };
