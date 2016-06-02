@@ -14,7 +14,7 @@
   "private": true,
   "scripts": {
     "start": "node server.js",
-    "start-dev": "nodemon server.js"
+    "watch": "nodemon server.js"
   },
   "repository": {
     "type": "git",

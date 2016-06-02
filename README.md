@@ -5,7 +5,10 @@
     npm i && bower i
 
     # run
-    node server.js
+    npm start
+
+    # or with nodemon
+    npm run-script watch
 
     # play
     google-chrome http://localhost:3000/
