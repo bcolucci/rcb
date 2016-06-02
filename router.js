@@ -3,7 +3,7 @@
 const sprintf = require('sprintf');
 const randomString = require('random-string');
 
-const COMPUTE_DELAY_MS = 50;
+const COMPUTE_DELAY_MS = 30;
 
 const RCB = require('./rcb');
 
@@ -25,23 +25,34 @@ const newGame = socket => {
 };
 
 const compute = socket => {
-  if (!game || !socket)
-    return;
+  if (!game || !socket) return;
   state = game.compute(events, state);
   socket.broadcast.emit('compute', state);
-  clearEvents();
+};
+
+const pushEvent = (name, keyCode) => {
+  events = events.filter(val => val.name !== name || val.keyCode !== keyCode)
+    .concat({ name: name, keyCode: keyCode, ts: new Date().getTime() });
+};
+
+const delEvent = (name, keyCode) => {
+  events = events.filter(val => val.name !== name && val.keyCode !== keyCode);
 };
 
 const connectionHandler = socket => {
   newGame(socket);
   socket.id = randomString() + '-' + sprintf('%04d', Math.floor(Math.random() * 1000));
+  socket.emit('id', socket.id);
   socket.on('disconnect', disconnectHandler(socket));
-  socket.on('keyPress', keyPressHandler(socket));
+  socket.on('keyDownPress', keyDownPressHandler(socket));
+  socket.on('keyUpPress', keyUpPressHandler(socket));
 };
 
-const disconnectHandler = socket => () => stopComputing();
+const disconnectHandler = socket => stopComputing;
 
-const keyPressHandler = socket => keyCode => events.push({ name: 'keyPress', keyCode: keyCode });
+const keyDownPressHandler = socket => keyCode => pushEvent('keyPress', keyCode);
+
+const keyUpPressHandler = socket => keyCode => delEvent('keyPress', keyCode);
 
 module.exports = http => {
   const io = require('socket.io')(http);
