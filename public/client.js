@@ -76,10 +76,6 @@ const RCBClient = (socket, anchor) => {
     player.y = MOVING_CIRCLE_RADIUS * (player.y + 1) + PLAYER_CIRCLE_RADIUS;
   };
 
-  const degreesToRadians = function(degrees) {
-    return degrees * Math.PI / 180;
-  };
-
   const drawPlayer = (canvas, player) => {
     canvas.beginPath();
     canvas.arc(player.x, player.y, PLAYER_CIRCLE_RADIUS, 0, 2 * Math.PI, 0);
@@ -87,8 +83,8 @@ const RCBClient = (socket, anchor) => {
     canvas.fill();
 
     canvas.save();
-    canvas.translate(-1*MOVING_CIRCLE_RADIUS, MOVING_CIRCLE_RADIUS);
-    canvas.rotate(degreesToRadians(player.angle));
+    //canvas.translate(0, 0);
+    canvas.rotate(player.angleRd);
     canvas.drawImage(robotImage, player.x - PLAYER_CIRCLE_RADIUS, player.y - PLAYER_CIRCLE_RADIUS, PLAYER_CIRCLE_RADIUS*2, PLAYER_CIRCLE_RADIUS*2);
     canvas.restore();
   };
