@@ -20,8 +20,12 @@ const RCB = (() => {
 
     this.defaultAnchor = () => document.body;
     this.defaultCanvasSize = () => window.innerHeight;
-    this.defaultRobotSrc = () => 'public/images/robot.png';
-    this.defaultBossSrc = () => 'public/images/boss.png';
+
+    this.defaultRobotSrc = () => 'public/robot.png';
+
+    this.defaultBoss1Src = () => 'public/boss1.png';
+    this.defaultBoss2Src = () => 'public/boss2.png';
+    this.defaultBoss3Src = () => 'public/boss3.png';
 
     this.escapeKeyCode = 27;
     this.spaceKeyCode = 32;
@@ -44,7 +48,10 @@ const RCB = (() => {
     this.canvasSize = args.canvasSize || this.defaultCanvasSize();
 
     this.robotImage = createImage(args.robotSrc || this.defaultRobotSrc());
-    this.bossImage = createImage(args.bossSrc || this.defaultBossSrc());
+
+    this.boss1Image = createImage(args.boss1Src || this.defaultBoss1Src());
+    this.boss2Image = createImage(args.boss2Src || this.defaultBoss2Src());
+    this.boss3Image = createImage(args.boss3Src || this.defaultBoss3Src());
 
     this.movingCircleRadius = this.canvasSize/2 - this.robotImage.width;
 
@@ -57,8 +64,12 @@ const RCB = (() => {
       KEY_CODE_RIGHT: this.rightKeyCode,
       MOVING_KEY_CODES: this.movingKeyCodes,
       TO_RAD: TO_RAD,
-      robotImage: { width: this.robotImage.width, height: this.robotImage.height },
-      bossImage: { width: this.bossImage.width, height: this.bossImage.height }
+      dimmensions: {
+        robot: { width: this.robotImage.width, height: this.robotImage.height },
+        boss1: { width: this.boss1Image.width, height: this.boss1Image.height },
+        boss2: { width: this.boss2Image.width, height: this.boss2Image.height },
+        boss3: { width: this.boss3Image.width, height: this.boss3Image.height }
+      }
     };
   };
 
@@ -133,8 +144,9 @@ const RCB = (() => {
     };
 
     const drawBoss = (ctx, boss) => {
-      const x = config.bossImage.width * (boss.x + 1) + config.bossImage.width;
-      const y = config.bossImage.width * (boss.y + 1) + config.bossImage.width;
+      const image = config[`boss${boss.level}Image`];
+      const x = image.width * (boss.x + 1) + image.width;
+      const y = image.width * (boss.y + 1) + image.width;
       ctx.beginPath();
       ctx.arc(ctx.canvas.center, ctx.canvas.center, 30, 0, 2 * Math.PI, 0);
       ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
@@ -143,7 +155,7 @@ const RCB = (() => {
       ctx.arc(x, y, 15, 0, 2 * Math.PI, 0);
       ctx.fillStyle = 'rgba(255, 0, 0, 0.7)';
       ctx.fill();
-      relRotation(ctx, config.bossImage, boss.angleRd, ctx.canvas.center, ctx.canvas.center);
+      relRotation(ctx, image, boss.angleRd, ctx.canvas.center, ctx.canvas.center);
     };
 
     const isDefinedKeyCode = keyCode => config.definedKeyCodes.indexOf(keyCode) > -1;
