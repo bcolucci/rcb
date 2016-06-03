@@ -34,7 +34,7 @@ const RCB = function (config) {
 
   //console.log(config);
 
-  const COMPUTE_DELAY = 30;
+  const COMPUTE_DELAY = 60;
 
   const KEY_PRESS_EVENT = 'keyPress';
 

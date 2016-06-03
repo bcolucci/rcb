@@ -26,27 +26,35 @@ const IO_Router = http => {
     socket.emit('compute', ctx.state);
   };
 
-  const pushEvent = (name, keyCode) => {
-    const filter = val => val.name !== name || val.keyCode !== keyCode;
-    ctx.events = ctx.events.filter(filter).concat({ name: name, keyCode: keyCode });
+  const pushKeyPress = keyCode => {
+    const filter = val => val.name !== 'keyPress' || val.keyCode !== keyCode;
+    ctx.events = ctx.events.filter(filter).concat({ name: 'keyPress', keyCode: keyCode });
   };
 
-  const delEvent = (name, keyCode) => {
-    const filter = val => val.name !== name && val.keyCode !== keyCode;
+  const removeKeyPress = keyCode => {
+    const filter = val => val.name !== 'keyPress' && val.keyCode !== keyCode;
     ctx.events = ctx.events.filter(filter);
   };
 
   const init = socket => config => {
     newGame(socket)(config);
     const stopComputing = () => clearInterval(ctx.interval);
+
     socket.on('disconnect', stopComputing);
+
     /*socket.on('updateConfig', config => {
       stopComputing();
       newGame(socket)(config, ctx.state);
     });*/
-    socket.on('keydown', keyCode => pushEvent('keyPress', keyCode));
-    socket.on('keyup', keyCode => delEvent('keyPress', keyCode));
-    socket.emit('initialized', socket.id);
+
+    socket.on('keysPress', events => {
+      events.forEach(e => e[0] === 'keydown' ? pushKeyPress(e[1]) : removeKeyPress(e[1]));
+    });
+
+    socket.emit('initialized', {
+      COMPUTE_DELAY: ctx.game.COMPUTE_DELAY,
+      socketId: socket.id
+    });
   };
 
   require('socket.io')(http).on('connection', socket => {

@@ -148,11 +148,16 @@ const RCB = (() => {
 
     const isDefinedKeyCode = keyCode => config.definedKeyCodes.indexOf(keyCode) > -1;
 
-    const emitKeyPress = (socket, source, eventName) => source
+    const sendEvents = events => () => {
+      const _events = events.splice(0, events.length);
+      socket.emit('keysPress', _events);
+    };
+
+    const emitKeyPress = events => (socket, source, eventName) => source
       .asEventStream(eventName)
       .map(event => event.keyCode)
       .filter(isDefinedKeyCode)
-      .onValue(keyCode => socket.emit(eventName, keyCode));
+      .onValue(keyCode => events.push([ eventName, keyCode ]));
 
     const drawState = (socketId, state) => {
 
@@ -187,11 +192,13 @@ const RCB = (() => {
 
     const start = () => {
       socket.emit('init', config.server);
-      socket.on('initialized', socketId => {
-        socket.id = socketId;
-        emitKeyPress(socket, eventSource, 'keydown');
-        emitKeyPress(socket, eventSource, 'keyup');
-        socket.on('compute', state => drawState(socketId, state));
+      socket.on('initialized', config => {
+        socket.id = config.socketId;
+        const events = [];
+        emitKeyPress(events)(socket, eventSource, 'keydown');
+        emitKeyPress(events)(socket, eventSource, 'keyup');
+        setInterval(sendEvents(events), Math.floor(config.COMPUTE_DELAY/2));
+        socket.on('compute', state => drawState(socket.id, state));
       });
     };
 
